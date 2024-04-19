@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/civet148/okex/types"
+	. "github.com/civet148/okex/utils"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
-	. "v5sdk_go/utils"
 )
 
 type RESTAPI struct {
@@ -20,15 +21,8 @@ type RESTAPI struct {
 	Uri        string                 `json:"uri"`
 	Param      map[string]interface{} `json:"param"`
 	Timeout    time.Duration
-	ApiKeyInfo *APIKeyInfo
+	ApiKeyInfo *types.APIKeyInfo
 	isSimulate bool
-}
-
-type APIKeyInfo struct {
-	ApiKey     string
-	PassPhrase string
-	SecKey     string
-	UserId     string
 }
 
 type RESTAPIResult struct {
@@ -51,11 +45,11 @@ type Okexv5APIResponse struct {
 }
 
 /*
-	endPoint:请求地址
-	apiKey
-	isSimulate: 是否为模拟环境
+endPoint:请求地址
+apiKey
+isSimulate: 是否为模拟环境
 */
-func NewRESTClient(endPoint string, apiKey *APIKeyInfo, isSimulate bool) *RESTAPI {
+func NewRESTClient(endPoint string, apiKey *types.APIKeyInfo, isSimulate bool) *RESTAPI {
 
 	res := &RESTAPI{
 		EndPoint:   endPoint,
@@ -90,7 +84,7 @@ func (this *RESTAPI) SetSimulate(b bool) *RESTAPI {
 
 func (this *RESTAPI) SetAPIKey(apiKey, secKey, passPhrase string) *RESTAPI {
 	if this.ApiKeyInfo == nil {
-		this.ApiKeyInfo = &APIKeyInfo{
+		this.ApiKeyInfo = &types.APIKeyInfo{
 			ApiKey:     apiKey,
 			PassPhrase: passPhrase,
 			SecKey:     secKey,
@@ -230,7 +224,7 @@ func (this *RESTAPI) Run(ctx context.Context) (res *RESTAPIResult, err error) {
 }
 
 /*
-	生成请求对应的参数
+生成请求对应的参数
 */
 func (this *RESTAPI) GenReqInfo() (uri string, body string, err error) {
 	uri = this.Uri
@@ -265,14 +259,14 @@ func (this *RESTAPI) GenReqInfo() (uri string, body string, err error) {
 }
 
 /*
-   Set http request headers:
-   Accept: application/json
-   Content-Type: application/json; charset=UTF-8  (default)
-   Cookie: locale=en_US        (English)
-   OK-ACCESS-KEY: (Your setting)
-   OK-ACCESS-SIGN: (Use your setting, auto sign and add)
-   OK-ACCESS-TIMESTAMP: (Auto add)
-   OK-ACCESS-PASSPHRASE: Your setting
+Set http request headers:
+Accept: application/json
+Content-Type: application/json; charset=UTF-8  (default)
+Cookie: locale=en_US        (English)
+OK-ACCESS-KEY: (Your setting)
+OK-ACCESS-SIGN: (Use your setting, auto sign and add)
+OK-ACCESS-TIMESTAMP: (Auto add)
+OK-ACCESS-PASSPHRASE: Your setting
 */
 func (this *RESTAPI) SetHeaders(request *http.Request, timestamp string, sign string) (header string) {
 
@@ -306,7 +300,7 @@ func (this *RESTAPI) SetHeaders(request *http.Request, timestamp string, sign st
 }
 
 /*
-	打印header信息
+打印header信息
 */
 func (this *RESTAPI) PrintRequest(request *http.Request, body string, preHash string) {
 	if this.ApiKeyInfo.SecKey != "" {

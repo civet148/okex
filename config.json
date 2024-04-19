@@ -1,0 +1,14 @@
+{
+  "policies": [
+    {
+      "side": "buy",
+      "fluctuation_rate": 0.1,
+      "trade_rate": 0.5
+    },
+    {
+      "side": "sell",
+      "fluctuation_rate": 0.1,
+      "trade_rate": 0.5
+    }
+  ]
+}

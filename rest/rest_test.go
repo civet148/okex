@@ -3,11 +3,12 @@ package rest
 import (
 	"context"
 	"fmt"
+	"github.com/civet148/okex/types"
 	"testing"
 )
 
 /*
-	GET请求
+GET请求
 */
 func TestRESTAPIGet(t *testing.T) {
 
@@ -30,7 +31,7 @@ func TestRESTAPIGet(t *testing.T) {
 	fmt.Println("\tdata: ", response.V5Response.Data)
 
 	// 请求的另一种方式
-	apikey := APIKeyInfo{
+	apikey := types.APIKeyInfo{
 		ApiKey:     "xxxxx",
 		SecKey:     "xxxxx",
 		PassPhrase: "xxx",
@@ -53,7 +54,7 @@ func TestRESTAPIGet(t *testing.T) {
 }
 
 /*
-	POST请求
+POST请求
 */
 func TestRESTAPIPost(t *testing.T) {
 	param := make(map[string]interface{})
@@ -77,7 +78,7 @@ func TestRESTAPIPost(t *testing.T) {
 	fmt.Println("\tdata: ", response.V5Response.Data)
 
 	// 请求的另一种方式
-	apikey := APIKeyInfo{
+	apikey := types.APIKeyInfo{
 		ApiKey:     "xxxx",
 		SecKey:     "xxxxx",
 		PassPhrase: "xxxx",
