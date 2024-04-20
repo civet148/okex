@@ -38,23 +38,23 @@ type Asset struct {
 	UplLiab       string          `json:"uplLiab"`
 }
 
-type BalanceInfo struct {
-	AdjEq       string  `json:"adjEq"`
-	BorrowFroz  string  `json:"borrowFroz"`
-	Details     []Asset `json:"details"`
-	Imr         string  `json:"imr"`
-	IsoEq       string  `json:"isoEq"`
-	MgnRatio    string  `json:"mgnRatio"`
-	Mmr         string  `json:"mmr"`
-	NotionalUsd string  `json:"notionalUsd"`
-	OrdFroz     string  `json:"ordFroz"`
-	TotalEq     string  `json:"totalEq"`
-	UTime       string  `json:"uTime"`
-	Upl         string  `json:"upl"`
+type Balance struct {
+	AdjEq       string          `json:"adjEq"`
+	BorrowFroz  string          `json:"borrowFroz"`
+	Details     []Asset         `json:"details"`
+	Imr         string          `json:"imr"`
+	IsoEq       string          `json:"isoEq"`
+	MgnRatio    string          `json:"mgnRatio"`
+	Mmr         string          `json:"mmr"`
+	NotionalUsd string          `json:"notionalUsd"`
+	OrdFroz     string          `json:"ordFroz"`
+	TotalEq     decimal.Decimal `json:"totalEq"`
+	UTime       string          `json:"uTime"`
+	Upl         string          `json:"upl"`
 }
 
-type BalanceV5 struct {
-	Code string        `json:"code"`
-	Msg  string        `json:"msg"`
-	Data []BalanceInfo `json:"data"`
+type BalanceResponseV5 struct {
+	Code string    `json:"code"`
+	Msg  string    `json:"msg"`
+	Data []Balance `json:"data"`
 }
