@@ -15,8 +15,8 @@ type OkexClient struct {
 	client *rest.RESTAPI
 }
 
-func NewOkexClient(apiKey *types.APIKeyInfo, strUrl string) *OkexClient {
-	client := rest.NewRESTClient(strUrl, apiKey, false)
+func NewOkexClient(apiKey *types.APIKeyInfo, strUrl string, isDebug bool) *OkexClient {
+	client := rest.NewRESTClient(strUrl, apiKey, false, isDebug)
 	return &OkexClient{
 		client: client,
 	}

@@ -96,7 +96,7 @@ func main() {
 var apiFlags = []cli.Flag{
 	&cli.BoolFlag{
 		Name:    CMD_FLAG_NAME_DEBUG,
-		Usage:   "debug raw data of interface response",
+		Usage:   "debug request & response",
 		Aliases: []string{"d"},
 		EnvVars: []string{"OK_API_DEBUG"},
 	},
@@ -178,7 +178,7 @@ var balanceCmd = &cli.Command{
 			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
 			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 		}
-		client := okex.NewOkexClient(apiKeyInfo, strApiAddr)
+		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
 		balance, err := client.Balance()
 		if err != nil {
 			return err
@@ -186,13 +186,16 @@ var balanceCmd = &cli.Command{
 		if cctx.Bool(CMD_FLAG_NAME_DEBUG) {
 			log.Json(balance)
 		}
-		log.Printf("\n\n")
 		var tab *table.Table
 		for _, a := range balance.Data {
-			var strUSD = fmt.Sprintf("USD[%s]", a.TotalEq.Round(4).String())
-			tab, err = gotable.Create("Token", "Total", "Available", "Frozen", strUSD)
+			var strUSD = fmt.Sprintf("USD [%s]", a.TotalEq.Round(4).String())
+			tab, err = gotable.Create("Token", "Total", "Available", "Frozen", strUSD, "Price")
 			for _, v := range a.Details {
-				tab.AddRow([]string{v.Ccy, v.CashBal.Round(4).String(), v.AvailBal.Round(4).String(), v.FrozenBal.Round(4).String(), v.EqUsd.Round(4).String()})
+				if !v.CashBal.IsPositive() {
+					continue
+				}
+				price := v.EqUsd.Div(v.CashBal).Round(8)
+				tab.AddRow([]string{v.Ccy, v.CashBal.Round(4).String(), v.AvailBal.Round(4).String(), v.FrozenBal.Round(4).String(), v.EqUsd.Round(4).String(), price.String()})
 			}
 		}
 		log.Printf(tab.String())
@@ -258,7 +261,7 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 		PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
 		SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 	}
-	client := okex.NewOkexClient(apiKeyInfo, strApiAddr)
+	client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
 	if cctx.Args().Len() != 2 {
 		return "", fmt.Errorf("args required 2 but got %v", cctx.Args().Len())
 	}
@@ -272,6 +275,10 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 	price := cctx.Float64(CMD_FLAG_NAME_PRICE)
 	orderNo := cctx.String(CMD_FLAG_NAME_ORDER_NO)
 	orderType := types.OrderType(cctx.String(CMD_FLAG_NAME_ORDER_TYPE))
+
+	if orderType == types.OrderType_Limit && price == 0 {
+		return "", fmt.Errorf("limit order price required")
+	}
 
 	req := types.TradeRequest{
 		Side:      side,

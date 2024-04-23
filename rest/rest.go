@@ -23,6 +23,7 @@ type RESTAPI struct {
 	Timeout    time.Duration
 	ApiKeyInfo *types.APIKeyInfo
 	isSimulate bool
+	isDebug    bool
 }
 
 type RESTAPIResult struct {
@@ -49,12 +50,13 @@ endPoint:请求地址
 apiKey
 isSimulate: 是否为模拟环境
 */
-func NewRESTClient(endPoint string, apiKey *types.APIKeyInfo, isSimulate bool) *RESTAPI {
+func NewRESTClient(endPoint string, apiKey *types.APIKeyInfo, isSimulate, isDebug bool) *RESTAPI {
 
 	res := &RESTAPI{
 		EndPoint:   endPoint,
 		ApiKeyInfo: apiKey,
 		isSimulate: isSimulate,
+		isDebug:    isDebug,
 		Timeout:    5 * time.Second,
 	}
 	return res
@@ -191,7 +193,9 @@ func (this *RESTAPI) Run(ctx context.Context) (res *RESTAPIResult, err error) {
 	headStr := this.SetHeaders(req, timestamp, sign)
 	res.Header = headStr
 
-	this.PrintRequest(req, body, preHash)
+	if this.isDebug {
+		this.PrintRequest(req, body, preHash)
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("请求失败！", err)
