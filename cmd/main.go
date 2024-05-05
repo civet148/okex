@@ -11,15 +11,16 @@ import (
 	"github.com/urfave/cli/v2"
 	"os"
 	"os/signal"
+	"strings"
 )
 
 const (
-	Version     = "v0.1.0"
+	Version     = "v0.2.0"
 	ProgramName = "okex"
 )
 
 var (
-	BuildTime = "2024-04-19"
+	BuildTime = "2024-05-05"
 	GitCommit = ""
 )
 
@@ -29,6 +30,8 @@ const (
 	CMD_NAME_BALANCE = "balance"
 	CMD_NAME_BUY     = "buy"
 	CMD_NAME_SELL    = "sell"
+	CMD_NAME_LIST    = "list"
+	CMD_NAME_CANCEL  = "cancel"
 )
 
 const (
@@ -76,6 +79,8 @@ func main() {
 		runCmd,
 		buyCmd,
 		sellCmd,
+		listCmd,
+		cancelCmd,
 		balanceCmd,
 	}
 	app := &cli.App{
@@ -265,7 +270,7 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 	if cctx.Args().Len() != 2 {
 		return "", fmt.Errorf("args required 2 but got %v", cctx.Args().Len())
 	}
-	ccy := cctx.Args().Get(0)
+	ccy := strings.ToUpper(cctx.Args().Get(0))
 	qty := cctx.Args().Get(1)
 	quantity, err := decimal.NewFromString(qty)
 	if err != nil {
@@ -293,4 +298,57 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 	_ = client
 	log.Json("trade request", req)
 	return client.SpotTradeOrder(&req)
+}
+
+var listCmd = &cli.Command{
+	Name:      CMD_NAME_LIST,
+	Usage:     "list pending limit orders",
+	ArgsUsage: "[PEPE_USDT,BTC_USDT...]",
+	Flags:     tradeFlags,
+	Action: func(cctx *cli.Context) error {
+
+		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
+		apiKeyInfo := &types.APIKeyInfo{
+			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
+			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
+			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
+		}
+		var instIds []string
+		instIds = strings.Split(cctx.Args().First(), ",")
+		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
+
+		orders, err := client.SpotPendingOrders(instIds...)
+		if err != nil {
+			return log.Errorf(err.Error())
+		}
+
+		var tab *table.Table
+		for _, v := range orders {
+			tab, err = gotable.Create("Instance ID", "Order ID", "Price", "Quantity", "Side")
+			err = tab.AddRow([]string{v.InstId, v.OrdId, v.Px.Round(8).String(), v.Sz.Round(8).String(), v.Side})
+			if err != nil {
+				return log.Errorf(err.Error())
+			}
+		}
+		log.Printf(tab.String())
+		return nil
+	},
+}
+
+var cancelCmd = &cli.Command{
+	Name:      CMD_NAME_CANCEL,
+	Usage:     "cancel limit order",
+	ArgsUsage: "<order id>",
+	Flags:     tradeFlags,
+	Action: func(cctx *cli.Context) error {
+
+		var strOrderId = cctx.Args().First()
+		if strOrderId == "" {
+			return fmt.Errorf("order id requires")
+		}
+
+		log.Infof("cancel order id [%s]", strOrderId)
+
+		return nil
+	},
 }
