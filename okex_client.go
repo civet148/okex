@@ -22,21 +22,21 @@ func NewOkexClient(apiKey *types.APIKeyInfo, strUrl string, isDebug bool) *OkexC
 	}
 }
 
-func (m *OkexClient) Balance() (balance *types.BalanceResponseV5, err error) {
+func (m *OkexClient) Balance() (response *types.BalanceResponseV5, err error) {
 	var res *rest.RESTAPIResult
 	res, err = m.client.Get(context.Background(), types.API_V5_ACCOUNT_BALANCE, nil)
 	if err != nil {
 		return nil, log.Errorf("GET balance error [%s]", err.Error())
 	}
-	balance = &types.BalanceResponseV5{}
-	err = json.Unmarshal([]byte(res.Body), &balance)
+	response = &types.BalanceResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
 	if err != nil {
 		return nil, log.Errorf("response body json unmarshal error [%s]", err.Error())
 	}
-	if balance.Code != "0" {
-		return nil, log.Errorf("%s", balance.Msg)
+	if response.Code != "0" {
+		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
 	}
-	return balance, nil
+	return response, nil
 }
 
 /*
@@ -82,7 +82,7 @@ func (m *OkexClient) SpotTradeOrder(req *types.TradeRequest) (orderId string, er
 		"sz":      req.Quantity.String(),
 	}
 	var res *rest.RESTAPIResult
-	res, err = m.client.Post(context.Background(), types.API_V5_API_V5_TRADE_ORDER, &params)
+	res, err = m.client.Post(context.Background(), types.API_V5_TRADE_ORDER, &params)
 	if err != nil {
 		return "", log.Errorf("POST trade order error [%s]", err.Error())
 	}
@@ -93,10 +93,7 @@ func (m *OkexClient) SpotTradeOrder(req *types.TradeRequest) (orderId string, er
 		return "", log.Errorf("response body json unmarshal error [%s]", err.Error())
 	}
 	if response.Code != "0" {
-		return "", log.Errorf("%s", response.Msg)
-	}
-	if len(response.Data) == 0 {
-		return "", log.Errorf("empty result")
+		return "", log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
 	}
 	orderId = response.Data[0].OrdId
 	return
@@ -105,11 +102,11 @@ func (m *OkexClient) SpotTradeOrder(req *types.TradeRequest) (orderId string, er
 // SpotPendingOrders 列出所有现货挂单
 // GET /api/v5/trade/orders-pending?ordType=post_only,fok,ioc&instType=SPOT
 // 参考文档：https://www.okx.com/docs-v5/zh/#order-book-trading-trade-get-order-list
-func (m *OkexClient) SpotPendingOrders(instIds ...string) (orders []types.TradeOrder, err error) {
+func (m *OkexClient) SpotPendingOrders(strOrderType string, instIds ...string) (orders []types.TradeOrder, err error) {
 
 	var params = map[string]interface{}{
 		"instType": "SPOT",
-		"ordType":  "limit",
+		"ordType":  strOrderType,
 	}
 	var res *rest.RESTAPIResult
 	res, err = m.client.Get(context.Background(), types.API_V5_PENDING_ORDERS, &params)
@@ -124,16 +121,29 @@ func (m *OkexClient) SpotPendingOrders(instIds ...string) (orders []types.TradeO
 		return nil, log.Errorf("response body json unmarshal error [%s]", err.Error())
 	}
 	if response.Code != "0" {
-		return nil, log.Errorf("%s", response.Msg)
+		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
 	}
-	if len(response.Data) == 0 {
-		log.Debugf("empty pending order list")
-		return nil, nil
-	}
+	log.Debugf("order count [%d]", len(response.Data))
 	return response.Data, nil
 }
 
 func (m *OkexClient) SpotCancelOrder(strOrderId string) (err error) {
-
+	var params = map[string]interface{}{
+		"ordId": strOrderId,
+	}
+	var res *rest.RESTAPIResult
+	res, err = m.client.Post(context.Background(), types.API_V5_CANCEL_ORDER, &params)
+	if err != nil {
+		return log.Errorf("POST cancel order error [%s]", err.Error())
+	}
+	log.Debugf("%s", res.Body)
+	response := &types.TradeResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
+	if err != nil {
+		return log.Errorf("response body json unmarshal error [%s]", err.Error())
+	}
+	if response.Code != "0" {
+		return log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
+	}
 	return nil
 }

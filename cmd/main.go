@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	Version     = "v0.2.0"
+	Version     = "v0.2.1"
 	ProgramName = "okex"
 )
 
 var (
-	BuildTime = "2024-05-05"
+	BuildTime = "2024-05-13"
 	GitCommit = ""
 )
 
@@ -177,6 +177,9 @@ var balanceCmd = &cli.Command{
 	Usage: "get account balance",
 	Flags: apiFlags,
 	Action: func(cctx *cli.Context) error {
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
 		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
 		apiKeyInfo := &types.APIKeyInfo{
 			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
@@ -250,6 +253,10 @@ var sellCmd = &cli.Command{
 	ArgsUsage: "<currency> <quantity>",
 	Flags:     tradeFlags,
 	Action: func(cctx *cli.Context) error {
+
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
 		strOrderId, err := tradeOrder(cctx, types.TradeSide_Sell)
 		if err != nil {
 			return log.Errorf(err.Error())
@@ -302,11 +309,14 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 
 var listCmd = &cli.Command{
 	Name:      CMD_NAME_LIST,
-	Usage:     "list pending limit orders",
+	Usage:     "list pending orders",
 	ArgsUsage: "[PEPE_USDT,BTC_USDT...]",
 	Flags:     tradeFlags,
 	Action: func(cctx *cli.Context) error {
 
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
 		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
 		apiKeyInfo := &types.APIKeyInfo{
 			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
@@ -317,15 +327,20 @@ var listCmd = &cli.Command{
 		instIds = strings.Split(cctx.Args().First(), ",")
 		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
 
-		orders, err := client.SpotPendingOrders(instIds...)
+		var strOrderType = string(types.OrderType_Limit)
+		if cctx.IsSet(CMD_FLAG_NAME_ORDER_TYPE) {
+			strOrderType = cctx.String(CMD_FLAG_NAME_ORDER_TYPE)
+		}
+		orders, err := client.SpotPendingOrders(strOrderType, instIds...)
 		if err != nil {
 			return log.Errorf(err.Error())
 		}
 
 		var tab *table.Table
+		tab, err = gotable.Create("Instance ID", "Order ID", "Price", "Quantity", "Side", "USD")
 		for _, v := range orders {
-			tab, err = gotable.Create("Instance ID", "Order ID", "Price", "Quantity", "Side")
-			err = tab.AddRow([]string{v.InstId, v.OrdId, v.Px.Round(8).String(), v.Sz.Round(8).String(), v.Side})
+			usd := v.Sz.Mul(v.Px)
+			err = tab.AddRow([]string{v.InstId, v.OrdId, v.Px.Round(8).String(), v.Sz.Round(8).String(), v.Side, usd.Round(5).String()})
 			if err != nil {
 				return log.Errorf(err.Error())
 			}
@@ -337,18 +352,28 @@ var listCmd = &cli.Command{
 
 var cancelCmd = &cli.Command{
 	Name:      CMD_NAME_CANCEL,
-	Usage:     "cancel limit order",
+	Usage:     "cancel pending order",
 	ArgsUsage: "<order id>",
 	Flags:     tradeFlags,
 	Action: func(cctx *cli.Context) error {
-
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
+		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
+		apiKeyInfo := &types.APIKeyInfo{
+			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
+			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
+			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
+		}
 		var strOrderId = cctx.Args().First()
 		if strOrderId == "" {
 			return fmt.Errorf("order id requires")
 		}
-
-		log.Infof("cancel order id [%s]", strOrderId)
-
+		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
+		if err := client.SpotCancelOrder(strOrderId); err != nil {
+			return log.Errorf(err.Error())
+		}
+		log.Infof("cancel order id [%s] success", strOrderId)
 		return nil
 	},
 }
