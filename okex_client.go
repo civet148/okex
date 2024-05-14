@@ -137,7 +137,7 @@ func (m *OkexClient) SpotCancelOrder(strOrderId string) (err error) {
 		return log.Errorf("POST cancel order error [%s]", err.Error())
 	}
 	log.Debugf("%s", res.Body)
-	response := &types.TradeResponseV5{}
+	response := &types.CancelOrderResponseV5{}
 	err = json.Unmarshal([]byte(res.Body), &response)
 	if err != nil {
 		return log.Errorf("response body json unmarshal error [%s]", err.Error())
