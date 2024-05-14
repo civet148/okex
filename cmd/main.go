@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	Version     = "v0.2.1"
+	Version     = "v0.3.0"
 	ProgramName = "okex"
 )
 
@@ -353,7 +353,7 @@ var listCmd = &cli.Command{
 var cancelCmd = &cli.Command{
 	Name:      CMD_NAME_CANCEL,
 	Usage:     "cancel pending order",
-	ArgsUsage: "<order id>",
+	ArgsUsage: "<inst id> <order id>",
 	Flags:     tradeFlags,
 	Action: func(cctx *cli.Context) error {
 		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
@@ -365,15 +365,19 @@ var cancelCmd = &cli.Command{
 			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
 			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 		}
-		var strOrderId = cctx.Args().First()
+		var strInstId = cctx.Args().First()
+		if strInstId == "" {
+			return fmt.Errorf("inst id requires")
+		}
+		var strOrderId = cctx.Args().Get(1)
 		if strOrderId == "" {
 			return fmt.Errorf("order id requires")
 		}
 		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
-		if err := client.SpotCancelOrder(strOrderId); err != nil {
+		if err := client.SpotCancelOrder(strInstId, strOrderId); err != nil {
 			return log.Errorf(err.Error())
 		}
-		log.Infof("cancel order id [%s] success", strOrderId)
+		log.Infof("cancel inst id [%s] order id [%s] success", strInstId, strOrderId)
 		return nil
 	},
 }

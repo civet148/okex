@@ -103,10 +103,11 @@ func (m *OkexClient) SpotTradeOrder(req *types.TradeRequest) (orderId string, er
 // GET /api/v5/trade/orders-pending?ordType=post_only,fok,ioc&instType=SPOT
 // 参考文档：https://www.okx.com/docs-v5/zh/#order-book-trading-trade-get-order-list
 func (m *OkexClient) SpotPendingOrders(strOrderType string, instIds ...string) (orders []types.TradeOrder, err error) {
-
 	var params = map[string]interface{}{
 		"instType": "SPOT",
-		"ordType":  strOrderType,
+	}
+	if strOrderType != "" {
+		params["orderType"] = strOrderType
 	}
 	var res *rest.RESTAPIResult
 	res, err = m.client.Get(context.Background(), types.API_V5_PENDING_ORDERS, &params)
@@ -127,9 +128,10 @@ func (m *OkexClient) SpotPendingOrders(strOrderType string, instIds ...string) (
 	return response.Data, nil
 }
 
-func (m *OkexClient) SpotCancelOrder(strOrderId string) (err error) {
+func (m *OkexClient) SpotCancelOrder(instId, strOrderId string) (err error) {
 	var params = map[string]interface{}{
-		"ordId": strOrderId,
+		"instId": instId,
+		"ordId":  strOrderId,
 	}
 	var res *rest.RESTAPIResult
 	res, err = m.client.Post(context.Background(), types.API_V5_CANCEL_ORDER, &params)
