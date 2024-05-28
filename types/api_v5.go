@@ -5,4 +5,9 @@ const (
 	API_V5_TRADE_ORDER     = "/api/v5/trade/order"
 	API_V5_PENDING_ORDERS  = "/api/v5/trade/orders-pending"
 	API_V5_CANCEL_ORDER    = "/api/v5/trade/cancel-order"
+	API_V5_MARKET_TICKER   = "/api/v5/market/ticker"
+)
+
+const (
+	SPOT = "SPOT" //现货
 )

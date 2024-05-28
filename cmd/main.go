@@ -32,6 +32,7 @@ const (
 	CMD_NAME_SELL    = "sell"
 	CMD_NAME_LIST    = "list"
 	CMD_NAME_CANCEL  = "cancel"
+	CMD_NAME_PRICE   = "price"
 )
 
 const (
@@ -82,6 +83,7 @@ func main() {
 		listCmd,
 		cancelCmd,
 		balanceCmd,
+		priceCmd,
 	}
 	app := &cli.App{
 		Name:        ProgramName,
@@ -378,6 +380,35 @@ var cancelCmd = &cli.Command{
 			return log.Errorf(err.Error())
 		}
 		log.Infof("cancel inst id [%s] order id [%s] success", strInstId, strOrderId)
+		return nil
+	},
+}
+
+var priceCmd = &cli.Command{
+	Name:      CMD_NAME_PRICE,
+	Usage:     "query co-currency price",
+	ArgsUsage: "<inst id>",
+	Flags:     tradeFlags,
+	Action: func(cctx *cli.Context) error {
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
+		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
+		apiKeyInfo := &types.APIKeyInfo{
+			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
+			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
+			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
+		}
+		var strInstId = cctx.Args().First()
+		if strInstId == "" {
+			return fmt.Errorf("inst id requires")
+		}
+		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
+		price, err := client.SpotPrice(strInstId)
+		if err != nil {
+			return log.Errorf(err.Error())
+		}
+		log.Infof("query inst id [%s] price [%s] success", strInstId, price.Last)
 		return nil
 	},
 }

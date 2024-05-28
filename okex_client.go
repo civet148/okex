@@ -149,3 +149,29 @@ func (m *OkexClient) SpotCancelOrder(instId, strOrderId string) (err error) {
 	}
 	return nil
 }
+
+func (m *OkexClient) SpotPrice(instId string) (price types.InstPrice, err error) {
+	var params = map[string]interface{}{
+		"instId": instId,
+	}
+	var res *rest.RESTAPIResult
+	res, err = m.client.Get(context.Background(), types.API_V5_MARKET_TICKER, &params)
+	if err != nil {
+		return price, log.Errorf("POST cancel order error [%s]", err.Error())
+	}
+	log.Debugf("%s", res.Body)
+	response := &types.MarketTickerResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
+	if err != nil {
+		return price, log.Errorf("response body json unmarshal error [%s]", err.Error())
+	}
+	if response.Code != "0" {
+		return price, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
+	}
+	for _, v := range response.Data {
+		if v.InstType == types.SPOT {
+			return v, nil
+		}
+	}
+	return price, nil
+}
