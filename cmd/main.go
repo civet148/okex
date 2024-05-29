@@ -25,14 +25,15 @@ var (
 )
 
 const (
-	CMD_NAME_RUN     = "run"
-	CMD_NAME_START   = "start"
-	CMD_NAME_BALANCE = "balance"
-	CMD_NAME_BUY     = "buy"
-	CMD_NAME_SELL    = "sell"
-	CMD_NAME_LIST    = "list"
-	CMD_NAME_CANCEL  = "cancel"
-	CMD_NAME_PRICE   = "price"
+	CMD_NAME_RUN       = "run"
+	CMD_NAME_START     = "start"
+	CMD_NAME_BALANCE   = "balance"
+	CMD_NAME_BUY       = "buy"
+	CMD_NAME_SELL      = "sell"
+	CMD_NAME_LIST      = "list"
+	CMD_NAME_CANCEL    = "cancel"
+	CMD_NAME_PRICE     = "price"
+	CMD_NAME_LIST_LOAN = "list-loan"
 )
 
 const (
@@ -84,6 +85,7 @@ func main() {
 		cancelCmd,
 		balanceCmd,
 		priceCmd,
+		listLoanCmd,
 	}
 	app := &cli.App{
 		Name:        ProgramName,
@@ -146,30 +148,6 @@ var runCmd = &cli.Command{
 	Aliases: []string{CMD_NAME_START},
 	Flags:   apiFlags,
 	Action: func(cctx *cli.Context) error {
-		//var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
-		//apiKeyInfo := &types.APIKeyInfo{
-		//	ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
-		//	PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
-		//	SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
-		//}
-		//client := okex.NewOkexClient(apiKeyInfo, strApiAddr)
-		//balance, err := client.Balance()
-		//if err != nil {
-		//	return err
-		//}
-		//if cctx.Bool(CMD_FLAG_NAME_DEBUG) {
-		//	log.Json(balance)
-		//}
-		//log.Printf("\n\n")
-		//var tab *table.Table
-		//for _, a := range balance.Data {
-		//	var strUSD = fmt.Sprintf("USD[%s]", a.TotalEq.Round(4).String())
-		//	tab, err = gotable.Create("Token", "Total", "Available", "Frozen", strUSD)
-		//	for _, v := range a.Details {
-		//		tab.AddRow([]string{v.Ccy, v.CashBal.Round(4).String(), v.AvailBal.Round(4).String(), v.FrozenBal.Round(4).String(), v.EqUsd.Round(4).String()})
-		//	}
-		//}
-		//log.Printf(tab.String())
 		return nil
 	},
 }
@@ -409,6 +387,31 @@ var priceCmd = &cli.Command{
 			return log.Errorf(err.Error())
 		}
 		log.Infof("query inst id [%s] price [%s] success", strInstId, price.Last)
+		return nil
+	},
+}
+
+var listLoanCmd = &cli.Command{
+	Name:      CMD_NAME_LIST_LOAN,
+	Usage:     "list loan tokens",
+	ArgsUsage: "",
+	Flags:     tradeFlags,
+	Action: func(cctx *cli.Context) error {
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
+		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
+		apiKeyInfo := &types.APIKeyInfo{
+			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
+			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
+			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
+		}
+		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
+		tokens, err := client.SpotLoanTokens()
+		if err != nil {
+			return log.Errorf(err.Error())
+		}
+		log.Json("loan list", tokens)
 		return nil
 	},
 }

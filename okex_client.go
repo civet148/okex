@@ -150,14 +150,14 @@ func (m *OkexClient) SpotCancelOrder(instId, strOrderId string) (err error) {
 	return nil
 }
 
-func (m *OkexClient) SpotPrice(instId string) (price types.InstPrice, err error) {
+func (m *OkexClient) SpotPrice(instId string) (price types.MarketPrice, err error) {
 	var params = map[string]interface{}{
 		"instId": instId,
 	}
 	var res *rest.RESTAPIResult
 	res, err = m.client.Get(context.Background(), types.API_V5_MARKET_TICKER, &params)
 	if err != nil {
-		return price, log.Errorf("POST cancel order error [%s]", err.Error())
+		return price, log.Errorf(err.Error())
 	}
 	log.Debugf("%s", res.Body)
 	response := &types.MarketTickerResponseV5{}
@@ -174,4 +174,23 @@ func (m *OkexClient) SpotPrice(instId string) (price types.InstPrice, err error)
 		}
 	}
 	return price, nil
+}
+
+func (m *OkexClient) SpotLoanTokens() (tokens []types.LoanToken, err error) {
+	var params = map[string]interface{}{}
+	var res *rest.RESTAPIResult
+	res, err = m.client.Get(context.Background(), types.API_V5_ACCOUNT_INTEREST_RATE, &params)
+	if err != nil {
+		return nil, log.Errorf(err.Error())
+	}
+	log.Debugf("%s", res.Body)
+	response := &types.LoanTokenResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
+	if err != nil {
+		return nil, log.Errorf("response body json unmarshal error [%s]", err.Error())
+	}
+	if response.Code != "0" {
+		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
+	}
+	return response.Data, nil
 }

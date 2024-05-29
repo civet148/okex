@@ -2,7 +2,7 @@ package types
 
 import "github.com/shopspring/decimal"
 
-type InstPrice struct {
+type MarketPrice struct {
 	InstType  string          `json:"instType"`  //产品类型(现货: SPOT)
 	InstId    string          `json:"instId"`    //产品ID（例如：BTC-USDT）
 	Last      decimal.Decimal `json:"last"`      //最新成交价
@@ -23,6 +23,6 @@ type InstPrice struct {
 
 type MarketTickerResponseV5 struct {
 	Code string      `json:"code"`
-	Msg  string      `json:"msg"`
-	Data []InstPrice `json:"data"`
+	Msg  string        `json:"msg"`
+	Data []MarketPrice `json:"data"`
 }
