@@ -378,15 +378,20 @@ var priceCmd = &cli.Command{
 			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 		}
 		var strInstId = cctx.Args().First()
-		if strInstId == "" {
-			return fmt.Errorf("inst id requires")
-		}
 		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, cctx.Bool(CMD_FLAG_NAME_DEBUG))
-		price, err := client.SpotPrice(strInstId)
-		if err != nil {
-			return log.Errorf(err.Error())
+		if strInstId == "" {
+			prices, err := client.SpotPrices()
+			if err != nil {
+				return log.Errorf(err.Error())
+			}
+			log.Json("spot prices", prices)
+		} else {
+			price, err := client.SpotPrice(strInstId)
+			if err != nil {
+				return log.Errorf(err.Error())
+			}
+			log.Infof("query inst id [%s] price [%s] success", strInstId, price.Last)
 		}
-		log.Infof("query inst id [%s] price [%s] success", strInstId, price.Last)
 		return nil
 	},
 }

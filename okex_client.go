@@ -176,6 +176,42 @@ func (m *OkexClient) SpotPrice(instId string) (price types.MarketPrice, err erro
 	return price, nil
 }
 
+func (m *OkexClient) SpotPrices(instIds ...string) (prices []types.MarketPrice, err error) {
+	var ids = make(map[string]bool)
+	for _, instId := range instIds {
+		ids[instId] = true
+	}
+	var res *rest.RESTAPIResult
+	var params = map[string]interface{}{
+		"instType": types.SPOT,
+	}
+	res, err = m.client.Get(context.Background(), types.API_V5_MARKET_TICKERS, &params)
+	if err != nil {
+		return nil, log.Errorf(err.Error())
+	}
+	log.Debugf("%s", res.Body)
+	response := &types.MarketTickerResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
+	if err != nil {
+		return nil, log.Errorf("response body json unmarshal error [%s]", err.Error())
+	}
+	if response.Code != "0" {
+		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
+	}
+	for _, v := range response.Data {
+		if v.InstType == types.SPOT {
+			if len(ids) != 0 {
+				ok := ids[v.InstId]
+				if !ok {
+					continue //ignore it
+				}
+			}
+			prices = append(prices, v)
+		}
+	}
+	return prices, nil
+}
+
 func (m *OkexClient) SpotLoanTokens() (tokens []types.LoanToken, err error) {
 	var params = map[string]interface{}{}
 	var res *rest.RESTAPIResult
