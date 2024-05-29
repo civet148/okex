@@ -37,7 +37,7 @@ func TestRESTAPIGet(t *testing.T) {
 		PassPhrase: "xxx",
 	}
 
-	cli := NewRESTClient("https://www.okex.win", &apikey, true)
+	cli := NewRESTClient("https://www.okex.win", &apikey, true, true, 30)
 	rsp, err := cli.Get(context.Background(), "/api/v5/account/balance", nil)
 	if err != nil {
 		return
@@ -84,7 +84,7 @@ func TestRESTAPIPost(t *testing.T) {
 		PassPhrase: "xxxx",
 	}
 
-	cli := NewRESTClient("https://www.okex.win", &apikey, true)
+	cli := NewRESTClient("https://www.okex.win", &apikey, true, true, 30)
 	rsp, err := cli.Post(context.Background(), "/api/v5/account/set-greeks", &param)
 	if err != nil {
 		return

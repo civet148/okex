@@ -50,14 +50,14 @@ endPoint:请求地址
 apiKey
 isSimulate: 是否为模拟环境
 */
-func NewRESTClient(endPoint string, apiKey *types.APIKeyInfo, isSimulate, isDebug bool) *RESTAPI {
+func NewRESTClient(endPoint string, apiKey *types.APIKeyInfo, isSimulate, isDebug bool, timeout int) *RESTAPI {
 
 	res := &RESTAPI{
 		EndPoint:   endPoint,
 		ApiKeyInfo: apiKey,
 		isSimulate: isSimulate,
 		isDebug:    isDebug,
-		Timeout:    5 * time.Second,
+		Timeout:    time.Duration(timeout) * time.Second,
 	}
 	return res
 }

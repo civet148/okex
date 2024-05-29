@@ -15,8 +15,27 @@ type OkexClient struct {
 	client *rest.RESTAPI
 }
 
-func NewOkexClient(apiKey *types.APIKeyInfo, strUrl string, isDebug bool) *OkexClient {
-	client := rest.NewRESTClient(strUrl, apiKey, false, isDebug)
+type Options struct {
+	TimeoutSeconds int
+	IsDebug        bool
+	IsSimulate     bool
+}
+
+func defaultOptions() *Options {
+	return &Options{
+		TimeoutSeconds: 30,
+		IsDebug:        false,
+		IsSimulate:     false,
+	}
+}
+func NewOkexClient(apiKey *types.APIKeyInfo, strUrl string, options ...*Options) *OkexClient {
+	var opts = defaultOptions()
+	for _, o := range options {
+		if o != nil {
+			opts = o
+		}
+	}
+	client := rest.NewRESTClient(strUrl, apiKey, opts.IsSimulate, opts.IsDebug, opts.TimeoutSeconds)
 	return &OkexClient{
 		client: client,
 	}
@@ -198,6 +217,7 @@ func (m *OkexClient) SpotPrices(instIds ...string) (prices []types.MarketPrice, 
 	if response.Code != "0" {
 		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
 	}
+	//log.Json("response", response)
 	for _, v := range response.Data {
 		if v.InstType == types.SPOT {
 			if len(ids) != 0 {
