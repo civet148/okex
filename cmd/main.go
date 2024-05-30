@@ -167,11 +167,12 @@ var balanceCmd = &cli.Command{
 			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 		}
 		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
 			TimeoutSeconds: 30,
 			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
 			IsSimulate:     false,
 		}
-		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, opts)
+		client := okex.NewOkexClient(apiKeyInfo, opts)
 		balance, err := client.Balance()
 		if err != nil {
 			return err
@@ -259,11 +260,12 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 		SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 	}
 	opts := &okex.Options{
+		ApiUrl:         strApiAddr,
 		TimeoutSeconds: 30,
 		IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
 		IsSimulate:     false,
 	}
-	client := okex.NewOkexClient(apiKeyInfo, strApiAddr, opts)
+	client := okex.NewOkexClient(apiKeyInfo, opts)
 	if cctx.Args().Len() != 2 {
 		return "", fmt.Errorf("args required 2 but got %v", cctx.Args().Len())
 	}
@@ -316,11 +318,12 @@ var listCmd = &cli.Command{
 		var instIds []string
 		instIds = strings.Split(cctx.Args().First(), ",")
 		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
 			TimeoutSeconds: 30,
 			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
 			IsSimulate:     false,
 		}
-		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, opts)
+		client := okex.NewOkexClient(apiKeyInfo, opts)
 
 		var strOrderType = string(types.OrderType_Limit)
 		if cctx.IsSet(CMD_FLAG_NAME_ORDER_TYPE) {
@@ -369,11 +372,12 @@ var cancelCmd = &cli.Command{
 			return fmt.Errorf("order id requires")
 		}
 		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
 			TimeoutSeconds: 30,
 			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
 			IsSimulate:     false,
 		}
-		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, opts)
+		client := okex.NewOkexClient(apiKeyInfo, opts)
 		if err := client.SpotCancelOrder(strInstId, strOrderId); err != nil {
 			return log.Errorf(err.Error())
 		}
@@ -399,11 +403,12 @@ var priceCmd = &cli.Command{
 		}
 		var strInstId = cctx.Args().First()
 		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
 			TimeoutSeconds: 30,
 			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
 			IsSimulate:     false,
 		}
-		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, opts)
+		client := okex.NewOkexClient(apiKeyInfo, opts)
 		if strInstId == "" {
 			prices, err := client.SpotPrices()
 			if err != nil {
@@ -437,11 +442,12 @@ var listLoanCmd = &cli.Command{
 			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 		}
 		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
 			TimeoutSeconds: 30,
 			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
 			IsSimulate:     false,
 		}
-		client := okex.NewOkexClient(apiKeyInfo, strApiAddr, opts)
+		client := okex.NewOkexClient(apiKeyInfo, opts)
 		tokens, err := client.SpotLoanTokens()
 		if err != nil {
 			return log.Errorf(err.Error())

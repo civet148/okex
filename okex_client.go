@@ -16,6 +16,7 @@ type OkexClient struct {
 }
 
 type Options struct {
+	ApiUrl         string
 	TimeoutSeconds int
 	IsDebug        bool
 	IsSimulate     bool
@@ -28,14 +29,17 @@ func defaultOptions() *Options {
 		IsSimulate:     false,
 	}
 }
-func NewOkexClient(apiKey *types.APIKeyInfo, strUrl string, options ...*Options) *OkexClient {
+func NewOkexClient(apiKey *types.APIKeyInfo, options ...*Options) *OkexClient {
 	var opts = defaultOptions()
 	for _, o := range options {
 		if o != nil {
 			opts = o
 		}
 	}
-	client := rest.NewRESTClient(strUrl, apiKey, opts.IsSimulate, opts.IsDebug, opts.TimeoutSeconds)
+	if opts.ApiUrl == "" {
+		opts.ApiUrl = types.OKEX_API_ADDR
+	}
+	client := rest.NewRESTClient(opts.ApiUrl, apiKey, opts.IsSimulate, opts.IsDebug, opts.TimeoutSeconds)
 	return &OkexClient{
 		client: client,
 	}
