@@ -212,7 +212,7 @@ func (m *OkexClient) SpotPrices(instIds ...string) (prices []types.MarketPrice, 
 	response := &types.MarketTickerResponseV5{}
 	err = json.Unmarshal([]byte(res.Body), &response)
 	if err != nil {
-		return nil, log.Errorf("response body json unmarshal error [%s]", err.Error())
+		return nil, log.Errorf("response body [%s] json unmarshal error [%s]", res.Body, err.Error())
 	}
 	if response.Code != "0" {
 		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
