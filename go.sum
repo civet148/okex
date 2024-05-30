@@ -13,8 +13,8 @@ github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghf
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
-github.com/civet148/decimal v1.4.1 h1:vFMr0alvfyKqeMXCnlSzQbLpD2M61h7/yAk7OGTZcTw=
-github.com/civet148/decimal v1.4.1/go.mod h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=
+github.com/civet148/decimal v1.4.2 h1:gx8sGWz22Mb1AuouzOSbT48To5ik7UHk95EEuOTk8Xs=
+github.com/civet148/decimal v1.4.2/go.mod h1:gawqmDU56v4yIKSwfBSFip1HdCCXN8/+DMd9qYNcwME=
 github.com/civet148/gotools v1.4.1 h1:9E2rVOUIebQvdG/75iEc1/nqWxqmrUTSWepl0dbaGHo=
 github.com/civet148/gotools v1.4.1/go.mod h1:SfbUhBkKsnCIZ+1Ac94sQ2yTCbwkRKgVjDgGxrwPYmw=
 github.com/civet148/log v1.5.1 h1:rc54sFMBz4EfkJJlJtwytO/egLuD/bBdw1iztMywNFM=

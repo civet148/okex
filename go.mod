@@ -11,7 +11,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.1
 )
 
-replace github.com/shopspring/decimal => github.com/civet148/decimal v1.4.1
+replace github.com/shopspring/decimal => github.com/civet148/decimal v1.4.2
 
 require (
 	github.com/civet148/gotools v1.4.1 // indirect
