@@ -18,6 +18,8 @@ type OrderType string
 const (
 	OrderType_Limit  OrderType = "limit"  //限价单
 	OrderType_Market OrderType = "market" //市价单
+	OrderType_Fok    OrderType = "fok"    //限价单(全部卖出或取消)
+	OrderType_Ioc    OrderType = "ioc"    //限价单(立刻成交并取消剩余)
 )
 
 type TradeMode string

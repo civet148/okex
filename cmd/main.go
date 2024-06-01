@@ -200,7 +200,7 @@ var balanceCmd = &cli.Command{
 var tradeFlags = append(apiFlags, []cli.Flag{
 	&cli.StringFlag{
 		Name:  CMD_FLAG_NAME_ORDER_TYPE,
-		Usage: "order type [limit/market...]",
+		Usage: "order type [limit/market/fok/ioc...]",
 		Value: string(types.OrderType_Market),
 	},
 	&cli.StringFlag{
@@ -280,7 +280,10 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 	orderNo := cctx.String(CMD_FLAG_NAME_ORDER_NO)
 	orderType := types.OrderType(cctx.String(CMD_FLAG_NAME_ORDER_TYPE))
 
-	if orderType == types.OrderType_Limit && price == 0 {
+	if (orderType == types.OrderType_Limit ||
+		orderType == types.OrderType_Fok ||
+		orderType == types.OrderType_Ioc) &&
+		price == 0 {
 		return "", fmt.Errorf("limit order price required")
 	}
 
