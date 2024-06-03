@@ -428,7 +428,7 @@ var listTokensCmd = &cli.Command{
 		var tab *table.Table
 		tab, err = gotable.Create("BaseCCY", "InstID", "QuoteCCY", "MinOrderSize")
 		for _, v := range tokens {
-			err = tab.AddRow([]string{v.BaseCcy, v.InstId, v.QuoteCcy, v.MinSz})
+			err = tab.AddRow([]string{v.BaseCcy, v.InstId, v.QuoteCcy, v.MinSz.String()})
 			if err != nil {
 				return log.Errorf(err.Error())
 			}

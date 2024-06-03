@@ -265,7 +265,6 @@ func (m *OkexClient) SpotTokens(ccys ...string) (tokens []types.TokenBase, err e
 	} else {
 		tokens = response.Data
 	}
-	log.Json("tokens", tokens)
 	return tokens, nil
 }
 
