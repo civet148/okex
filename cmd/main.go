@@ -25,15 +25,16 @@ var (
 )
 
 const (
-	CMD_NAME_RUN       = "run"
-	CMD_NAME_START     = "start"
-	CMD_NAME_BALANCE   = "balance"
-	CMD_NAME_BUY       = "buy"
-	CMD_NAME_SELL      = "sell"
-	CMD_NAME_LIST      = "list"
-	CMD_NAME_CANCEL    = "cancel"
-	CMD_NAME_PRICE     = "price"
-	CMD_NAME_LIST_LOAN = "list-loan"
+	CMD_NAME_RUN          = "run"
+	CMD_NAME_START        = "start"
+	CMD_NAME_BALANCE      = "balance"
+	CMD_NAME_BUY          = "buy"
+	CMD_NAME_SELL         = "sell"
+	CMD_NAME_CANCEL       = "cancel"
+	CMD_NAME_PRICE        = "price"
+	CMD_NAME_LIST_TOKENS  = "list-tokens"
+	CMD_NAME_LIST_PENDING = "list-pending"
+	CMD_NAME_LIST_LOAN    = "list-loan"
 )
 
 const (
@@ -81,11 +82,12 @@ func main() {
 		runCmd,
 		buyCmd,
 		sellCmd,
-		listCmd,
 		cancelCmd,
 		balanceCmd,
 		priceCmd,
+		listTokensCmd,
 		listLoanCmd,
+		listPendingCmd,
 	}
 	app := &cli.App{
 		Name:        ProgramName,
@@ -142,6 +144,27 @@ var apiFlags = []cli.Flag{
 	},
 }
 
+var tradeFlags = append(apiFlags, []cli.Flag{
+	&cli.StringFlag{
+		Name:  CMD_FLAG_NAME_ORDER_TYPE,
+		Usage: "order type [limit/market/fok/ioc...]",
+		Value: string(types.OrderType_Market),
+	},
+	&cli.StringFlag{
+		Name:  CMD_FLAG_NAME_BASE,
+		Usage: "base token",
+		Value: types.TradeBaseUSDT,
+	},
+	&cli.Float64Flag{
+		Name:  CMD_FLAG_NAME_PRICE,
+		Usage: "trade price",
+	},
+	&cli.StringFlag{
+		Name:  CMD_FLAG_NAME_ORDER_NO,
+		Usage: "trade order no",
+	},
+}...)
+
 var runCmd = &cli.Command{
 	Name:    CMD_NAME_RUN,
 	Usage:   "run as a strategy service",
@@ -196,27 +219,6 @@ var balanceCmd = &cli.Command{
 		return nil
 	},
 }
-
-var tradeFlags = append(apiFlags, []cli.Flag{
-	&cli.StringFlag{
-		Name:  CMD_FLAG_NAME_ORDER_TYPE,
-		Usage: "order type [limit/market/fok/ioc...]",
-		Value: string(types.OrderType_Market),
-	},
-	&cli.StringFlag{
-		Name:  CMD_FLAG_NAME_BASE,
-		Usage: "base token",
-		Value: types.TradeBaseUSDT,
-	},
-	&cli.Float64Flag{
-		Name:  CMD_FLAG_NAME_PRICE,
-		Usage: "trade price",
-	},
-	&cli.StringFlag{
-		Name:  CMD_FLAG_NAME_ORDER_NO,
-		Usage: "trade order no",
-	},
-}...)
 
 var buyCmd = &cli.Command{
 	Name:      CMD_NAME_BUY,
@@ -302,11 +304,11 @@ func tradeOrder(cctx *cli.Context, side types.TradeSide) (orderId string, err er
 	return client.SpotTradeOrder(&req)
 }
 
-var listCmd = &cli.Command{
-	Name:      CMD_NAME_LIST,
+var listPendingCmd = &cli.Command{
+	Name:      CMD_NAME_LIST_PENDING,
 	Usage:     "list pending orders",
-	ArgsUsage: "[PEPE_USDT,BTC_USDT...]",
-	Flags:     tradeFlags,
+	ArgsUsage: "[PEPE-USDT,BTC-USDT...]",
+	Flags:     apiFlags,
 	Action: func(cctx *cli.Context) error {
 
 		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
@@ -385,6 +387,53 @@ var cancelCmd = &cli.Command{
 			return log.Errorf(err.Error())
 		}
 		log.Infof("cancel inst id [%s] order id [%s] success", strInstId, strOrderId)
+		return nil
+	},
+}
+
+var listTokensCmd = &cli.Command{
+	Name:      CMD_NAME_LIST_TOKENS,
+	Usage:     "list tokens",
+	ArgsUsage: "[PEPE,BTC...]",
+	Flags:     apiFlags,
+	Action: func(cctx *cli.Context) error {
+
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
+		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
+		apiKeyInfo := &types.APIKeyInfo{
+			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
+			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
+			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
+		}
+		var instIds []string
+		strCcys := strings.ToUpper(cctx.Args().First())
+		if strCcys != "" {
+			instIds = strings.Split(strCcys, ",")
+		}
+		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
+			TimeoutSeconds: 30,
+			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
+			IsSimulate:     false,
+		}
+		client := okex.NewOkexClient(apiKeyInfo, opts)
+
+		tokens, err := client.SpotTokens(instIds...)
+		if err != nil {
+			return log.Errorf(err.Error())
+		}
+
+		var tab *table.Table
+		tab, err = gotable.Create("BaseCCY", "InstID", "QuoteCCY", "MinOrderSize")
+		for _, v := range tokens {
+			err = tab.AddRow([]string{v.BaseCcy, v.InstId, v.QuoteCcy, v.MinSz})
+			if err != nil {
+				return log.Errorf(err.Error())
+			}
+		}
+		log.Printf(tab.String())
 		return nil
 	},
 }

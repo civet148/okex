@@ -236,6 +236,39 @@ func (m *OkexClient) SpotPrices(instIds ...string) (prices []types.MarketPrice, 
 	return prices, nil
 }
 
+func (m *OkexClient) SpotTokens(ccys ...string) (tokens []types.TokenBase, err error) {
+	var params = map[string]interface{}{
+		"instType": types.SPOT,
+	}
+	var res *rest.RESTAPIResult
+	res, err = m.client.Get(context.Background(), types.API_V5_ACCOUNT_INSTRUMENTS, &params)
+	if err != nil {
+		return nil, log.Errorf(err.Error())
+	}
+	log.Debugf("%s", res.Body)
+	response := &types.InstrumentsResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
+	if err != nil {
+		return nil, log.Errorf("response body json unmarshal error [%s]", err.Error())
+	}
+	if response.Code != "0" {
+		return nil, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
+	}
+	if len(ccys) != 0 {
+		for _, ccy := range ccys {
+			for _, tok := range response.Data {
+				if tok.BaseCcy == ccy {
+					tokens = append(tokens, tok)
+				}
+			}
+		}
+	} else {
+		tokens = response.Data
+	}
+	log.Json("tokens", tokens)
+	return tokens, nil
+}
+
 func (m *OkexClient) SpotLoanTokens() (tokens []types.LoanToken, err error) {
 	var params = map[string]interface{}{}
 	var res *rest.RESTAPIResult
