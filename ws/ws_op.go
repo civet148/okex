@@ -3,19 +3,18 @@ package ws
 import (
 	"context"
 	"errors"
+	"github.com/civet148/okex/rest"
+	"github.com/civet148/okex/types"
+	"github.com/civet148/okex/utils"
+	. "github.com/civet148/okex/ws/wInterface"
 	"log"
 	"sync"
 	"time"
-	. "v5sdk_go/config"
-	"v5sdk_go/rest"
-	. "v5sdk_go/utils"
-	. "v5sdk_go/ws/wImpl"
-	. "v5sdk_go/ws/wInterface"
 )
 
 /*
-	Ping服务端保持心跳。
-	timeOut:超时时间(毫秒)，如果不填默认为5000ms
+Ping服务端保持心跳。
+timeOut:超时时间(毫秒)，如果不填默认为5000ms
 */
 func (a *WsClient) Ping(timeOut ...int) (res bool, detail *ProcessDetail, err error) {
 	tm := 5000
@@ -31,7 +30,7 @@ func (a *WsClient) Ping(timeOut ...int) (res bool, detail *ProcessDetail, err er
 	ctx := context.Background()
 	ctx, _ = context.WithTimeout(ctx, time.Duration(tm)*time.Millisecond)
 	ctx = context.WithValue(ctx, "detail", detail)
-	msg, err := a.process(ctx, EVENT_PING, nil)
+	msg, err := a.process(ctx, types.EVENT_PING, nil)
 	if err != nil {
 		res = false
 		log.Println("处理请求失败!", err)
@@ -54,7 +53,7 @@ func (a *WsClient) Ping(timeOut ...int) (res bool, detail *ProcessDetail, err er
 }
 
 /*
-	登录私有频道
+登录私有频道
 */
 func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res bool, detail *ProcessDetail, err error) {
 
@@ -73,10 +72,10 @@ func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res
 		return
 	}
 
-	a.WsApi = &ApiInfo{
+	a.WsApi = &types.APIKeyInfo{
 		ApiKey:     apiKey,
-		SecretKey:  secKey,
-		Passphrase: passPhrase,
+		SecKey:     secKey,
+		PassPhrase: passPhrase,
 	}
 
 	tm := 5000
@@ -85,12 +84,12 @@ func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res
 	}
 	res = true
 
-	timestamp := EpochTime()
+	timestamp := utils.EpochTime()
 
-	preHash := PreHashString(timestamp, rest.GET, "/users/self/verify", "")
+	preHash := utils.PreHashString(timestamp, rest.GET, "/users/self/verify", "")
 	//fmt.Println("preHash:", preHash)
 	var sign string
-	if sign, err = HmacSha256Base64Signer(preHash, secKey); err != nil {
+	if sign, err = utils.HmacSha256Base64Signer(preHash, secKey); err != nil {
 		log.Println("处理签名失败！", err)
 		return
 	}
@@ -100,7 +99,7 @@ func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res
 	args["passphrase"] = passPhrase
 	args["timestamp"] = timestamp
 	args["sign"] = sign
-	req := &ReqData{
+	req := &types.ReqData{
 		Op:   OP_LOGIN,
 		Args: []map[string]string{args},
 	}
@@ -113,7 +112,7 @@ func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res
 	ctx, _ = context.WithTimeout(ctx, time.Duration(tm)*time.Millisecond)
 	ctx = context.WithValue(ctx, "detail", detail)
 
-	msg, err := a.process(ctx, EVENT_LOGIN, req)
+	msg, err := a.process(ctx, types.EVENT_LOGIN, req)
 	if err != nil {
 		res = false
 		log.Println("处理请求失败!", req, err)
@@ -126,7 +125,7 @@ func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res
 		return
 	}
 
-	info, _ := msg[0].Info.(ErrData)
+	info, _ := msg[0].Info.(types.ErrData)
 
 	if info.Code == "0" && info.Event == OP_LOGIN {
 		log.Println("登录成功!")
@@ -140,9 +139,9 @@ func (a *WsClient) Login(apiKey, secKey, passPhrase string, timeOut ...int) (res
 }
 
 /*
-	等待结果响应
+等待结果响应
 */
-func (a *WsClient) waitForResult(e Event, timeOut int) (data interface{}, err error) {
+func (a *WsClient) waitForResult(e types.Event, timeOut int) (data interface{}, err error) {
 
 	if _, ok := a.regCh[e]; !ok {
 		a.lock.Lock()
@@ -168,7 +167,7 @@ func (a *WsClient) waitForResult(e Event, timeOut int) (data interface{}, err er
 }
 
 /*
-	发送消息到服务端
+发送消息到服务端
 */
 func (a *WsClient) Send(ctx context.Context, op WSReqData) (err error) {
 	select {
@@ -181,7 +180,7 @@ func (a *WsClient) Send(ctx context.Context, op WSReqData) (err error) {
 	return
 }
 
-func (a *WsClient) process(ctx context.Context, e Event, op WSReqData) (data []*Msg, err error) {
+func (a *WsClient) process(ctx context.Context, e types.Event, op WSReqData) (data []*Msg, err error) {
 	defer func() {
 		_ = recover()
 	}()
@@ -269,7 +268,7 @@ func (a *WsClient) process(ctx context.Context, e Event, op WSReqData) (data []*
 	}(ctx)
 
 	switch e {
-	case EVENT_PING:
+	case types.EVENT_PING:
 		msg := "ping"
 		detail.ReqInfo = msg
 		a.sendCh <- msg
@@ -289,23 +288,23 @@ func (a *WsClient) process(ctx context.Context, e Event, op WSReqData) (data []*
 }
 
 /*
-	根据args请求参数判断请求类型
-	如：{"channel": "account","ccy": "BTC"} 类型为 EVENT_BOOK_ACCOUNT
+根据args请求参数判断请求类型
+如：{"channel": "account","ccy": "BTC"} 类型为 EVENT_BOOK_ACCOUNT
 */
-func GetEventByParam(param map[string]string) (evtId Event) {
-	evtId = EVENT_UNKNOWN
+func GetEventByParam(param map[string]string) (evtId types.Event) {
+	evtId = types.EVENT_UNKNOWN
 	channel, ok := param["channel"]
 	if !ok {
 		return
 	}
 
-	evtId = GetEventId(channel)
+	evtId = types.GetEventId(channel)
 	return
 }
 
 /*
-	订阅频道。
-	req：请求json字符串
+订阅频道。
+req：请求json字符串
 */
 func (a *WsClient) Subscribe(param map[string]string, timeOut ...int) (res bool, detail *ProcessDetail, err error) {
 	res = true
@@ -315,7 +314,7 @@ func (a *WsClient) Subscribe(param map[string]string, timeOut ...int) (res bool,
 	}
 
 	evtid := GetEventByParam(param)
-	if evtid == EVENT_UNKNOWN {
+	if evtid == types.EVENT_UNKNOWN {
 		err = errors.New("非法的请求参数！")
 		return
 	}
@@ -323,7 +322,7 @@ func (a *WsClient) Subscribe(param map[string]string, timeOut ...int) (res bool,
 	var args []map[string]string
 	args = append(args, param)
 
-	req := ReqData{
+	req := types.ReqData{
 		Op:   OP_SUBSCRIBE,
 		Args: args,
 	}
@@ -355,8 +354,8 @@ func (a *WsClient) Subscribe(param map[string]string, timeOut ...int) (res bool,
 }
 
 /*
-	取消订阅频道。
-	req：请求json字符串
+取消订阅频道。
+req：请求json字符串
 */
 func (a *WsClient) UnSubscribe(param map[string]string, timeOut ...int) (res bool, detail *ProcessDetail, err error) {
 	res = true
@@ -366,7 +365,7 @@ func (a *WsClient) UnSubscribe(param map[string]string, timeOut ...int) (res boo
 	}
 
 	evtid := GetEventByParam(param)
-	if evtid == EVENT_UNKNOWN {
+	if evtid == types.EVENT_UNKNOWN {
 		err = errors.New("非法的请求参数！")
 		return
 	}
@@ -374,7 +373,7 @@ func (a *WsClient) UnSubscribe(param map[string]string, timeOut ...int) (res boo
 	var args []map[string]string
 	args = append(args, param)
 
-	req := ReqData{
+	req := types.ReqData{
 		Op:   OP_UNSUBSCRIBE,
 		Args: args,
 	}
@@ -404,7 +403,7 @@ func (a *WsClient) UnSubscribe(param map[string]string, timeOut ...int) (res boo
 }
 
 /*
-	jrpc请求
+jrpc请求
 */
 func (a *WsClient) Jrpc(id, op string, params []map[string]interface{}, timeOut ...int) (res bool, detail *ProcessDetail, err error) {
 	res = true
@@ -413,13 +412,13 @@ func (a *WsClient) Jrpc(id, op string, params []map[string]interface{}, timeOut 
 		tm = timeOut[0]
 	}
 
-	evtid := GetEventId(op)
-	if evtid == EVENT_UNKNOWN {
+	evtid := types.GetEventId(op)
+	if evtid == types.EVENT_UNKNOWN {
 		err = errors.New("非法的请求参数！")
 		return
 	}
 
-	req := JRPCReq{
+	req := types.JRPCReq{
 		Id:   id,
 		Op:   op,
 		Args: params,
@@ -449,7 +448,7 @@ func (a *WsClient) Jrpc(id, op string, params []map[string]interface{}, timeOut 
 	return
 }
 
-func (a *WsClient) PubChannel(evtId Event, op string, params []map[string]string, pd Period, timeOut ...int) (res bool, msg []*Msg, err error) {
+func (a *WsClient) PubChannel(evtId types.Event, op string, params []map[string]string, pd types.Period, timeOut ...int) (res bool, msg []*Msg, err error) {
 
 	// 参数校验
 	pa, err := checkParams(evtId, params, pd)
@@ -463,7 +462,7 @@ func (a *WsClient) PubChannel(evtId Event, op string, params []map[string]string
 		tm = timeOut[0]
 	}
 
-	req := ReqData{
+	req := types.ReqData{
 		Op:   op,
 		Args: pa,
 	}
@@ -489,7 +488,7 @@ func (a *WsClient) PubChannel(evtId Event, op string, params []map[string]string
 }
 
 // 参数校验
-func checkParams(evtId Event, params []map[string]string, pd Period) (res []map[string]string, err error) {
+func checkParams(evtId types.Event, params []map[string]string, pd types.Period) (res []map[string]string, err error) {
 
 	channel := evtId.GetChannel(pd)
 	if channel == "" {

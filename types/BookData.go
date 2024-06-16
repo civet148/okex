@@ -2,7 +2,7 @@
 	订阅频道后收到的推送数据
 */
 
-package wImpl
+package types
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"hash/crc32"
 	"log"
 	"strconv"
+	"strings"
 )
 
 // 普通推送

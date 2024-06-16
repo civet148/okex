@@ -2,11 +2,10 @@
 	普通订阅请求和响应的数据格式
 */
 
-package wImpl
+package types
 
 import (
 	"encoding/json"
-	. "v5sdk_go/utils"
 )
 
 // 客户端请求消息格式

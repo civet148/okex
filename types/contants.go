@@ -1,4 +1,4 @@
-package wImpl
+package types
 
 import (
 	"regexp"
@@ -13,11 +13,11 @@ const (
 	MSG_JRPC
 )
 
-//事件
+// 事件
 type Event int
 
 /*
-	EventID
+EventID
 */
 const (
 	EVENT_UNKNOWN Event = iota
@@ -66,8 +66,8 @@ const (
 )
 
 /*
-	EventID，事件名称，channel
-	注： 带有周期参数的频道 如 行情频道 ，需要将channel写为 正则表达模式方便 类型匹配，如 "^candle*"
+EventID，事件名称，channel
+注： 带有周期参数的频道 如 行情频道 ，需要将channel写为 正则表达模式方便 类型匹配，如 "^candle*"
 */
 var EVENT_TABLE = [][]interface{}{
 	// 未知的消息
@@ -130,7 +130,7 @@ var EVENT_TABLE = [][]interface{}{
 }
 
 /*
-	获取事件名称
+获取事件名称
 */
 func (e Event) String() string {
 	for _, v := range EVENT_TABLE {
@@ -144,8 +144,8 @@ func (e Event) String() string {
 }
 
 /*
-	通过事件获取对应的channel信息
-	对于频道名称有时间周期的 通过参数 pd 传入，拼接后返回完整channel信息
+通过事件获取对应的channel信息
+对于频道名称有时间周期的 通过参数 pd 传入，拼接后返回完整channel信息
 */
 func (e Event) GetChannel(pd Period) string {
 
@@ -167,7 +167,7 @@ func (e Event) GetChannel(pd Period) string {
 }
 
 /*
-	通过channel信息匹配获取事件类型
+通过channel信息匹配获取事件类型
 */
 func GetEventId(raw string) Event {
 	evt := EVENT_UNKNOWN

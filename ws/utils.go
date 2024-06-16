@@ -2,10 +2,10 @@ package ws
 
 import (
 	"errors"
+	"github.com/civet148/okex/types"
+	. "github.com/civet148/okex/ws/wInterface"
 	"log"
 	"runtime/debug"
-	. "v5sdk_go/ws/wImpl"
-	. "v5sdk_go/ws/wInterface"
 )
 
 // 判断返回结果成功失败
@@ -26,7 +26,7 @@ func checkResult(wsReq WSReqData, wsRsps []*Msg) (res bool, err error) {
 
 	for _, v := range wsRsps {
 		switch v.Info.(type) {
-		case ErrData:
+		case types.ErrData:
 			return
 		}
 		if wsReq.GetType() != v.Info.(WSRspData).MsgType() {
@@ -36,8 +36,8 @@ func checkResult(wsReq WSReqData, wsRsps []*Msg) (res bool, err error) {
 	}
 
 	//检查所有频道是否都更新成功
-	if wsReq.GetType() == MSG_NORMAL {
-		req, ok := wsReq.(ReqData)
+	if wsReq.GetType() == types.MSG_NORMAL {
+		req, ok := wsReq.(types.ReqData)
 		if !ok {
 			log.Println("类型转化失败", req)
 			err = errors.New("类型转化失败")
@@ -49,7 +49,7 @@ func checkResult(wsReq WSReqData, wsRsps []*Msg) (res bool, err error) {
 			i_req := req.Args[idx]
 			//fmt.Println("检查",i_req)
 			for i, _ := range wsRsps {
-				info, _ := wsRsps[i].Info.(RspData)
+				info, _ := wsRsps[i].Info.(types.RspData)
 				//fmt.Println("<<",info)
 				if info.Event == req.Op && info.Arg["channel"] == i_req["channel"] && info.Arg["instType"] == i_req["instType"] {
 					ok = true
@@ -63,7 +63,7 @@ func checkResult(wsReq WSReqData, wsRsps []*Msg) (res bool, err error) {
 		}
 	} else {
 		for i, _ := range wsRsps {
-			info, _ := wsRsps[i].Info.(JRPCRsp)
+			info, _ := wsRsps[i].Info.(types.JRPCRsp)
 			if info.Code != "0" {
 				return
 			}

@@ -2,10 +2,10 @@ package ws
 
 import (
 	"fmt"
+	"github.com/civet148/okex/types"
 	"log"
 	"testing"
 	"time"
-	. "v5sdk_go/ws/wImpl"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -218,7 +218,7 @@ func TestWsClient_Jrpc(t *testing.T) {
 }
 
 /*
-	测试 添加全局消息回调函数
+测试 添加全局消息回调函数
 */
 func TestAddMessageHook(t *testing.T) {
 
@@ -235,7 +235,7 @@ func TestAddMessageHook(t *testing.T) {
 }
 
 /*
-	普通推送数据回调函数
+普通推送数据回调函数
 */
 func TestAddBookedDataHook(t *testing.T) {
 	var r *WsClient
@@ -246,7 +246,7 @@ func TestAddBookedDataHook(t *testing.T) {
 		var res bool
 		var err error
 
-		r.AddBookMsgHook(func(ts time.Time, data MsgData) error {
+		r.AddBookMsgHook(func(ts time.Time, data types.MsgData) error {
 			// 添加你的方法
 			fmt.Println("这是自定义AddBookMsgHook")
 			fmt.Println("当前数据是", data)
@@ -275,7 +275,7 @@ func TestAddBookedDataHook(t *testing.T) {
 		var res bool
 		var err error
 
-		r.AddBookMsgHook(func(ts time.Time, data MsgData) error {
+		r.AddBookMsgHook(func(ts time.Time, data types.MsgData) error {
 			// 添加你的方法
 			fmt.Println("这是自定义AddBookMsgHook")
 			fmt.Println("当前数据是", data)
@@ -313,23 +313,22 @@ func TestGetInfoFromErrMsg(t *testing.T) {
 }
 
 /*
-
  */
 func TestParseMessage(t *testing.T) {
 	r := prework()
-	var evt Event
+	var evt types.Event
 	msg := `{"event":"error","msg":"Contract does not exist.","code":"51001"}`
 
 	evt, _, _ = r.parseMessage([]byte(msg))
-	assert.True(t, EVENT_ERROR == evt)
+	assert.True(t, types.EVENT_ERROR == evt)
 
 	msg = `{"event":"error","msg":"channel:positions,ccy:BTC doesn't exist","code":"60018"}`
 	evt, _, _ = r.parseMessage([]byte(msg))
-	assert.True(t, EVENT_BOOK_POSTION == evt)
+	assert.True(t, types.EVENT_BOOK_POSTION == evt)
 }
 
 /*
-	原始方式 深度订阅 测试
+原始方式 深度订阅 测试
 */
 func TestSubscribeTBT(t *testing.T) {
 	r := prework()
@@ -337,7 +336,7 @@ func TestSubscribeTBT(t *testing.T) {
 	var err error
 
 	// 添加你的方法
-	r.AddDepthHook(func(ts time.Time, data DepthData) error {
+	r.AddDepthHook(func(ts time.Time, data types.DepthData) error {
 		//fmt.Println("这是自定义AddBookMsgHook")
 		fmt.Println("当前数据是:", data)
 		return nil
@@ -361,7 +360,6 @@ func TestSubscribeTBT(t *testing.T) {
 }
 
 /*
-
  */
 func TestSubscribeBalAndPos(t *testing.T) {
 	r := prework_pri(CROSS_ACCOUNT)

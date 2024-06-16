@@ -286,3 +286,41 @@ func (m *OkexClient) SpotLoanTokens() (tokens []types.LoanToken, err error) {
 	}
 	return response.Data, nil
 }
+
+func (m *OkexClient) SpotOrderBook(symbol string, level int) (depth types.OrderBook, err error) {
+	var params = map[string]interface{}{
+		"instId": symbol,
+		"sz":     level,
+	}
+	var res *rest.RESTAPIResult
+	res, err = m.client.Get(context.Background(), types.API_V5_MARKET_BOOKS, &params)
+	if err != nil {
+		return depth, log.Errorf(err.Error())
+	}
+	log.Debugf("%s", res.Body)
+	response := &types.OrderBookResponseV5{}
+	err = json.Unmarshal([]byte(res.Body), &response)
+	if err != nil {
+		return depth, log.Errorf("response body json unmarshal error [%s]", err.Error())
+	}
+	if response.Code != "0" {
+		return depth, log.Errorf("error code [%v] message [%s]", response.Code, response.Msg)
+	}
+	for _, d := range response.Data {
+		for _, v := range d.Bids {
+			depth.Bids = append(depth.Bids, types.DepthUnit{
+				Price:         v[0],
+				Quantity:      v[1],
+				OrderQuantity: v[3],
+			})
+		}
+		for _, v := range d.Asks {
+			depth.Asks = append(depth.Asks, types.DepthUnit{
+				Price:         v[0],
+				Quantity:      v[1],
+				OrderQuantity: v[3],
+			})
+		}
+	}
+	return depth, nil
+}

@@ -1,7 +1,7 @@
 /*
-	错误数据
+错误数据
 */
-package wImpl
+package types
 
 // 服务端请求错误返回消息格式
 type ErrData struct {
@@ -9,5 +9,3 @@ type ErrData struct {
 	Code  string `json:"code"`
 	Msg   string `json:"msg"`
 }
-
-

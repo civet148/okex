@@ -1,11 +1,10 @@
 /*
-	JRPC请求/响应数据
+JRPC请求/响应数据
 */
-package wImpl
+package types
 
 import (
 	"encoding/json"
-	. "v5sdk_go/utils"
 )
 
 // jrpc请求结构体
@@ -47,4 +46,17 @@ func (r JRPCRsp) MsgType() int {
 func (r JRPCRsp) String() string {
 	raw, _ := json.Marshal(r)
 	return string(raw)
+}
+
+/*
+struct convert json string
+*/
+func Struct2JsonString(raw interface{}) (jsonString string, err error) {
+	//fmt.Println("转化json,", raw)
+	data, err := json.Marshal(raw)
+	if err != nil {
+		return "", err
+	}
+	//log.Println(string(data))
+	return string(data), nil
 }

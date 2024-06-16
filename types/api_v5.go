@@ -9,6 +9,7 @@ const (
 	API_V5_MARKET_TICKER         = "/api/v5/market/ticker"         //单个产品行情信息
 	API_V5_MARKET_TICKERS        = "/api/v5/market/tickers"        //全部产品行情信息
 	API_V5_ACCOUNT_INTEREST_RATE = "/api/v5/account/interest-rate" //借币币种和利息
+	API_V5_MARKET_BOOKS          = "/api/v5/market/books"          //深度数据
 )
 
 const (

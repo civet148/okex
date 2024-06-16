@@ -32,6 +32,7 @@ const (
 	CMD_NAME_SELL         = "sell"
 	CMD_NAME_CANCEL       = "cancel"
 	CMD_NAME_PRICE        = "price"
+	CMD_NAME_DEPTH        = "depth"
 	CMD_NAME_LIST_TOKENS  = "list-tokens"
 	CMD_NAME_LIST_PENDING = "list-pending"
 	CMD_NAME_LIST_LOAN    = "list-loan"
@@ -39,7 +40,7 @@ const (
 
 const (
 	CMD_FLAG_NAME_DEBUG       = "debug"
-	CMD_FLAG_NAME_CONFIG      = "config"
+	CMD_FLAG_NAME_POLICY      = "policy"
 	CMD_FLAG_NAME_API_ADDR    = "addr"
 	CMD_FLAG_NAME_API_KEY     = "ak"
 	CMD_FLAG_NAME_SECRET_KEY  = "sk"
@@ -48,6 +49,7 @@ const (
 	CMD_FLAG_NAME_BASE        = "base"
 	CMD_FLAG_NAME_PRICE       = "price"
 	CMD_FLAG_NAME_ORDER_NO    = "order-no"
+	CMD_FLAG_NAME_LEVEL       = "level"
 )
 
 func init() {
@@ -79,12 +81,12 @@ func main() {
 	grace()
 
 	local := []*cli.Command{
-		runCmd,
 		buyCmd,
 		sellCmd,
 		cancelCmd,
 		balanceCmd,
 		priceCmd,
+		depthCmd,
 		listTokensCmd,
 		listLoanCmd,
 		listPendingCmd,
@@ -112,8 +114,8 @@ var apiFlags = []cli.Flag{
 		EnvVars: []string{"OK_API_DEBUG"},
 	},
 	&cli.StringFlag{
-		Name:    CMD_FLAG_NAME_CONFIG,
-		Usage:   "config path of policy",
+		Name:    CMD_FLAG_NAME_POLICY,
+		Usage:   "policy file path",
 		Aliases: []string{"c"},
 		Value:   types.OKEX_POLICY_CONFIG,
 	},
@@ -165,19 +167,9 @@ var tradeFlags = append(apiFlags, []cli.Flag{
 	},
 }...)
 
-var runCmd = &cli.Command{
-	Name:    CMD_NAME_RUN,
-	Usage:   "run as a strategy service",
-	Aliases: []string{CMD_NAME_START},
-	Flags:   apiFlags,
-	Action: func(cctx *cli.Context) error {
-		return nil
-	},
-}
-
 var balanceCmd = &cli.Command{
 	Name:  CMD_NAME_BALANCE,
-	Usage: "get account balance",
+	Usage: "account balance",
 	Flags: apiFlags,
 	Action: func(cctx *cli.Context) error {
 		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
@@ -206,7 +198,7 @@ var balanceCmd = &cli.Command{
 		var tab *table.Table
 		for _, a := range balance.Data {
 			var strUSD = fmt.Sprintf("USD [%s]", a.TotalEq.Round(4).String())
-			tab, err = gotable.Create("Token", "Total", "Available", "Frozen", strUSD, "Price")
+			tab, err = gotable.Create("CCY", "Total", "Available", "Frozen", strUSD, "Price")
 			for _, v := range a.Details {
 				if !v.CashBal.IsPositive() {
 					continue
@@ -356,7 +348,7 @@ var listPendingCmd = &cli.Command{
 var cancelCmd = &cli.Command{
 	Name:      CMD_NAME_CANCEL,
 	Usage:     "cancel pending order",
-	ArgsUsage: "<inst id> <order id>",
+	ArgsUsage: "<symbol> <order id>",
 	Flags:     tradeFlags,
 	Action: func(cctx *cli.Context) error {
 		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
@@ -370,7 +362,7 @@ var cancelCmd = &cli.Command{
 		}
 		var strInstId = cctx.Args().First()
 		if strInstId == "" {
-			return fmt.Errorf("inst id requires")
+			return fmt.Errorf("symbol requires")
 		}
 		var strOrderId = cctx.Args().Get(1)
 		if strOrderId == "" {
@@ -386,7 +378,7 @@ var cancelCmd = &cli.Command{
 		if err := client.SpotCancelOrder(strInstId, strOrderId); err != nil {
 			return log.Errorf(err.Error())
 		}
-		log.Infof("cancel inst id [%s] order id [%s] success", strInstId, strOrderId)
+		log.Infof("cancel symbol [%s] order id [%s] success", strInstId, strOrderId)
 		return nil
 	},
 }
@@ -426,9 +418,9 @@ var listTokensCmd = &cli.Command{
 		}
 
 		var tab *table.Table
-		tab, err = gotable.Create("BaseCCY", "InstID", "QuoteCCY", "MinOrderSize")
+		tab, err = gotable.Create("CCY", "QuoteCCY", "Symbol", "MinOrderSize")
 		for _, v := range tokens {
-			err = tab.AddRow([]string{v.BaseCcy, v.InstId, v.QuoteCcy, v.MinSz.String()})
+			err = tab.AddRow([]string{v.BaseCcy, v.QuoteCcy, v.InstId, v.MinSz.String()})
 			if err != nil {
 				return log.Errorf(err.Error())
 			}
@@ -441,7 +433,7 @@ var listTokensCmd = &cli.Command{
 var priceCmd = &cli.Command{
 	Name:      CMD_NAME_PRICE,
 	Usage:     "query co-currency price",
-	ArgsUsage: "<inst id>",
+	ArgsUsage: "<symbol>",
 	Flags:     tradeFlags,
 	Action: func(cctx *cli.Context) error {
 		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
@@ -453,7 +445,7 @@ var priceCmd = &cli.Command{
 			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
 			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
 		}
-		var strInstId = cctx.Args().First()
+		var strSymbol = cctx.Args().First()
 		opts := &okex.Options{
 			ApiUrl:         strApiAddr,
 			TimeoutSeconds: 30,
@@ -461,19 +453,64 @@ var priceCmd = &cli.Command{
 			IsSimulate:     false,
 		}
 		client := okex.NewOkexClient(apiKeyInfo, opts)
-		if strInstId == "" {
+		if strSymbol == "" {
 			prices, err := client.SpotPrices()
 			if err != nil {
 				return log.Errorf(err.Error())
 			}
 			log.Json("spot prices", prices)
 		} else {
-			price, err := client.SpotPrice(strInstId)
+			price, err := client.SpotPrice(strSymbol)
 			if err != nil {
 				return log.Errorf(err.Error())
 			}
-			log.Infof("query inst id [%s] price [%s] success", strInstId, price.Last)
+			log.Infof("query symbol [%s] price [%s] success", strSymbol, price.Last)
 		}
+		return nil
+	},
+}
+
+var depthFlags = append(apiFlags, []cli.Flag{
+	&cli.IntFlag{
+		Name:  CMD_FLAG_NAME_LEVEL,
+		Usage: "level of depth prices",
+		Value: 10,
+	},
+}...)
+
+var depthCmd = &cli.Command{
+	Name:      CMD_NAME_DEPTH,
+	Usage:     "query depth price by HTTP/HTTPS",
+	ArgsUsage: "<symbol>",
+	Flags:     depthFlags,
+	Action: func(cctx *cli.Context) error {
+		if cctx.IsSet(CMD_FLAG_NAME_DEBUG) {
+			log.SetLevel("debug")
+		}
+		var strApiAddr = cctx.String(CMD_FLAG_NAME_API_ADDR)
+		apiKeyInfo := &types.APIKeyInfo{
+			ApiKey:     cctx.String(CMD_FLAG_NAME_API_KEY),
+			PassPhrase: cctx.String(CMD_FLAG_NAME_PASS_PHRASE),
+			SecKey:     cctx.String(CMD_FLAG_NAME_SECRET_KEY),
+		}
+		var strSymbol = cctx.Args().First()
+		if strSymbol == "" {
+			return log.Errorf("symbol required")
+		}
+
+		opts := &okex.Options{
+			ApiUrl:         strApiAddr,
+			TimeoutSeconds: 30,
+			IsDebug:        cctx.Bool(CMD_FLAG_NAME_DEBUG),
+			IsSimulate:     false,
+		}
+		client := okex.NewOkexClient(apiKeyInfo, opts)
+		level := cctx.Int(CMD_FLAG_NAME_LEVEL)
+		depth, err := client.SpotOrderBook(strSymbol, level)
+		if err != nil {
+			return log.Errorf(err.Error())
+		}
+		log.Json("depth price", depth)
 		return nil
 	},
 }

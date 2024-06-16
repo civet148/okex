@@ -1,9 +1,11 @@
 package wInterface
 
-import . "v5sdk_go/ws/wImpl"
+import (
+	"github.com/civet148/okex/types"
+)
 
 // 请求数据
 type WSParam interface {
-	EventType() Event
+	EventType() types.Event
 	ToMap() *map[string]string
 }

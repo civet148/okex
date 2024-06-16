@@ -2,9 +2,9 @@ package ws
 
 import (
 	"fmt"
+	"github.com/civet148/okex/types"
 	"testing"
 	"time"
-	. "v5sdk_go/ws/wImpl"
 )
 
 func PrintDetail(d *ProcessDetail) {
@@ -40,7 +40,7 @@ func (r *WsClient) makeOrder(instId string, tdMode string, side string, ordType 
 		return
 	}
 	if res && len(data.Data) == 1 {
-		rsp := data.Data[0].Info.(JRPCRsp)
+		rsp := data.Data[0].Info.(types.JRPCRsp)
 		if len(rsp.Data) == 1 {
 			val, ok := rsp.Data[0]["ordId"]
 			if !ok {
@@ -55,7 +55,7 @@ func (r *WsClient) makeOrder(instId string, tdMode string, side string, ordType 
 }
 
 /*
-	单个下单
+单个下单
 */
 func TestPlaceOrder(t *testing.T) {
 	r := prework_pri(CROSS_ACCOUNT)
@@ -86,7 +86,7 @@ func TestPlaceOrder(t *testing.T) {
 }
 
 /*
-	批量下单
+批量下单
 */
 func TestPlaceBatchOrder(t *testing.T) {
 	r := prework_pri(CROSS_ACCOUNT)
@@ -128,7 +128,7 @@ func TestPlaceBatchOrder(t *testing.T) {
 }
 
 /*
-	撤销订单
+撤销订单
 */
 func TestCancelOrder(t *testing.T) {
 	r := prework_pri(CROSS_ACCOUNT)
@@ -155,7 +155,7 @@ func TestCancelOrder(t *testing.T) {
 }
 
 /*
-	修改订单
+修改订单
 */
 func TestAmendlOrder(t *testing.T) {
 	r := prework_pri(CROSS_ACCOUNT)
